@@ -27,9 +27,12 @@ public class SyntaxTree {
         boolean angleOpened = false;
         boolean lastOp = true;
 
+        Deque<Integer> parenthesisStack = new ArrayDeque<>();
+        int copyPos = 0;
+
         for (int i = 0; i < expr.length(); ++i) {
             char c = expr.charAt(i);
-            boolean isUnaryOrClose = (c == ')' || c == '>' || c == '}' || c == '?' || c == '|' ||
+            boolean isUnaryOrClose = (c == ')' || c == '>' || c == '}' || c == '?' || c == '|' || c == '{' ||
                     (c == '.' && i < expr.length() - 2 && expr.charAt(i+1) == '.' && expr.charAt(i+2) == '.'));
 
             if (!lastOp && !isUnaryOrClose) correctExpr.append('.');
@@ -71,6 +74,7 @@ public class SyntaxTree {
                 }
                 case '(' -> {
                     ++openedParenthesis;
+                    parenthesisStack.push(correctExpr.length());
                     correctExpr.append('(');
                     lastOp = true;
                 }
@@ -93,16 +97,25 @@ public class SyntaxTree {
                     lastOp = true;
                 }
                 case '{' -> {
-                    if (curlyOpened) throw new IllegalArgumentException("Bad curly expression");
-                    curlyOpened = true;
-                    correctExpr.append('{');
-                    lastOp = true;
-                }
-                case '}' -> {
-                    if (!curlyOpened) throw new IllegalArgumentException("Bad curly expression");
-                    curlyOpened = false;
-                    correctExpr.append('}');
-                    lastOp = false;
+                    int endPos   = correctExpr.length();
+
+                    StringBuilder copyCount = new StringBuilder();
+
+                    ++i;
+
+                    while (i < expr.length() && expr.charAt(i) != '}') {
+                        if (!Character.isDigit(expr.charAt(i))) throw new IllegalArgumentException("Bad curly expression");
+                        copyCount.append(expr.charAt(i++));
+                    }
+
+                    if (i == expr.length()) throw new IllegalArgumentException("Bad curly expression");
+
+                    int num = Integer.parseInt(copyCount.toString());
+
+                    while (num-- > 1) {
+                        correctExpr.append('.');
+                        correctExpr.append(correctExpr, copyPos, endPos);
+                    }
                 }
                 case '*' -> {
                     correctExpr.append('\\');
@@ -110,12 +123,11 @@ public class SyntaxTree {
                     lastOp = false;
                 }
                 default -> {
-                    if (curlyOpened && !Character.isDigit(expr.charAt(i))) throw new IllegalArgumentException("Bad regular expression");
-                    lastOp = curlyOpened || angleOpened;
-
+                    lastOp = false;
                     correctExpr.append(expr.charAt(i));
                 }
             }
+            copyPos = c == ')' ? parenthesisStack.pop() : i;
         }
         if (openedParenthesis != 0) throw new IllegalArgumentException("Bad regular expression");
         if (!lastOp) correctExpr.append('.');
