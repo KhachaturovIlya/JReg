@@ -1,139 +1,64 @@
 package JReg;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Stack;
+import lombok.Getter;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SyntaxTree {
+    AtomicInteger id = new AtomicInteger(0);
+    
     public sealed interface Node {
-        record Leaf(char c, int id) implements Node {}
-        record And (Node left, Node right) implements Node {} // .
-        record Or (Node left, Node right) implements Node {} // |
-        record Snap (Node child) implements Node {} // ... == *
-        record Optional (Node child) implements Node {} // ?
+        public Node copy(AtomicInteger id);
+        
+        record Leaf(char c, int id) implements Node {
+            @Override
+            public Node copy(AtomicInteger id) {
+                return new Leaf(c, id.incrementAndGet());
+            }
+        }
+        record And (Node left, Node right) implements Node {
+            @Override
+            public Node copy(AtomicInteger id) {
+                return new And(left.copy(id), right.copy(id));
+            }
+        }
+        record Or (Node left, Node right) implements Node {
+            @Override
+            public Node copy(AtomicInteger id) {
+                return new Or(left.copy(id), right.copy(id));
+            }
+        } 
+        record Snap (Node child) implements Node {
+          @Override
+          public Node copy(AtomicInteger id) {
+              return new Snap(child.copy(id));
+          }  
+        } 
+        record Optional (Node child) implements Node {
+            @Override
+            public Node copy(AtomicInteger id) {
+                return new Optional(child.copy(id));
+            }
+        } 
+        record EndNode (int id) implements Node {
+            @Override
+            public Node copy(AtomicInteger id) {
+                return new EndNode(id.incrementAndGet());
+            }
+        }
     }
+
+    @Getter
+    private Node root = null;
+
+    private final Map<Node, Boolean> nullable = new HashMap<>();
+    private final Map<Node, Set<Integer>> firstPos = new HashMap<>();
+    private final Map<Node, Set<Integer>> lastPos = new HashMap<>();
+    private final Map<Integer, Set<Integer>> followPos = new HashMap<>();
 
     public SyntaxTree(Node root) {
         this.root = root;
-    }
-
-    Node root = null;
-
-    private static String prepareExpr(String expr) throws IllegalArgumentException {
-        StringBuilder correctExpr = new StringBuilder();
-
-        int openedParenthesis = 0;
-        boolean curlyOpened = false;
-        boolean angleOpened = false;
-        boolean lastOp = true;
-
-        Deque<Integer> parenthesisStack = new ArrayDeque<>();
-        int copyPos = 0;
-
-        for (int i = 0; i < expr.length(); ++i) {
-            char c = expr.charAt(i);
-            boolean isUnaryOrClose = (c == ')' || c == '>' || c == '}' || c == '?' || c == '|' || c == '{' ||
-                    (c == '.' && i < expr.length() - 2 && expr.charAt(i+1) == '.' && expr.charAt(i+2) == '.'));
-
-            if (!lastOp && !isUnaryOrClose) correctExpr.append('.');
-
-            switch (c) {
-                case '\\' -> {
-                    if (i == expr.length() - 1) throw new IllegalArgumentException("Bad regular expression");
-                    correctExpr.append('\\');
-                    correctExpr.append(expr.charAt(i + 1));
-                    ++i;
-                    lastOp = false;
-                }
-                case '.' -> {
-                    if (i == expr.length() - 1) throw new IllegalArgumentException("Bad regular expression");
-
-                    if (expr.charAt(i + 1) != '.') {
-                        correctExpr.append('\\');
-                        correctExpr.append('.');
-                        lastOp = false;
-                        continue;
-                    }
-
-                    if (i == expr.length() - 2 || expr.charAt(i + 2) != '.')
-                        throw new IllegalArgumentException("Bad regular expression");
-
-                    correctExpr.append('*');
-
-                    i += 2; // Need to seek i, because we captured 3 chars at once
-
-                    lastOp = false;
-                }
-                case '|' -> {
-                    correctExpr.append('|');
-                    lastOp = true;
-                }
-                case '?' -> {
-                    correctExpr.append('?');
-                    lastOp = false;
-                }
-                case '(' -> {
-                    ++openedParenthesis;
-                    parenthesisStack.push(correctExpr.length());
-                    correctExpr.append('(');
-                    lastOp = true;
-                }
-                case ')' -> {
-                    if (openedParenthesis == 0) throw new IllegalArgumentException("Bad regular expression");
-                    --openedParenthesis;
-                    correctExpr.append(')');
-                    lastOp = false;
-                }
-                case '<' -> {
-                    if (angleOpened) throw new IllegalArgumentException("Bad angle expression");
-                    angleOpened = true;
-                    correctExpr.append('<');
-                    lastOp = true;
-                }
-                case  '>' -> {
-                    if (!angleOpened) throw new IllegalArgumentException("Bad angle expression");
-                    angleOpened = false;
-                    correctExpr.append('>');
-                    lastOp = true;
-                }
-                case '{' -> {
-                    int endPos   = correctExpr.length();
-
-                    StringBuilder copyCount = new StringBuilder();
-
-                    ++i;
-
-                    while (i < expr.length() && expr.charAt(i) != '}') {
-                        if (!Character.isDigit(expr.charAt(i))) throw new IllegalArgumentException("Bad curly expression");
-                        copyCount.append(expr.charAt(i++));
-                    }
-
-                    if (i == expr.length()) throw new IllegalArgumentException("Bad curly expression");
-
-                    int num = Integer.parseInt(copyCount.toString());
-
-                    while (num-- > 1) {
-                        correctExpr.append('.');
-                        correctExpr.append(correctExpr, copyPos, endPos);
-                    }
-                }
-                case '*' -> {
-                    correctExpr.append('\\');
-                    correctExpr.append('*');
-                    lastOp = false;
-                }
-                default -> {
-                    lastOp = false;
-                    correctExpr.append(expr.charAt(i));
-                }
-            }
-            copyPos = c == ')' ? parenthesisStack.pop() : i;
-        }
-        if (openedParenthesis != 0) throw new IllegalArgumentException("Bad regular expression");
-        if (!lastOp) correctExpr.append('.');
-        correctExpr.append('#');
-
-        return correctExpr.toString();
     }
 
     private static int getPriority(char c) {
@@ -158,16 +83,16 @@ public class SyntaxTree {
         characterStack.push(op);
     }
 
-    private static SyntaxTree buildTree(String expr) throws IllegalArgumentException {
+    public SyntaxTree(PreparedRegularStatement preparedRegularStatement) throws IllegalArgumentException {
+        String expr = preparedRegularStatement.getRegularStatement();
+
         Deque<Node> nodeStack = new ArrayDeque<>();
         Deque<Character> charactersStack = new ArrayDeque<>();
-
-        int id = 0;
 
         for (int i = 0; i < expr.length(); ++i) {
             char c = expr.charAt(i);
             switch (c) {
-                case '\\' -> nodeStack.push(new Node.Leaf(expr.charAt(++i), ++id));
+                case '\\' -> nodeStack.push(new Node.Leaf(expr.charAt(++i), id.incrementAndGet()));
                 case '*'  -> nodeStack.push(new Node.Snap(nodeStack.pop()));
                 case '?'  -> nodeStack.push(new Node.Optional(nodeStack.pop()));
                 case '|', '.' -> collapseStack(charactersStack, nodeStack, c);
@@ -179,7 +104,29 @@ public class SyntaxTree {
                         op = charactersStack.pop();
                     }
                 }
-                default -> nodeStack.push(new Node.Leaf(c, ++id));
+
+                case '{' -> {
+                    StringBuilder cnt = new StringBuilder();
+                    i++;
+
+                    while (expr.charAt(i) != '}') {
+                        cnt.append(expr.charAt(i++));
+                    }
+
+                    int n = Integer.parseInt(cnt.toString());
+                    if (n == 1) continue;
+
+                    Node original = nodeStack.pop();
+                    Node current  = original;
+
+                    while (--n > 0) {
+                        current = new Node.And(current, original.copy(id));
+                    }
+
+                    nodeStack.push(current);
+                }
+
+                default -> nodeStack.push(new Node.Leaf(c, id.incrementAndGet()));
             }
         }
 
@@ -187,20 +134,24 @@ public class SyntaxTree {
             applyOp(nodeStack, charactersStack.pop());
         }
 
-        Node root = nodeStack.pop();
+        this.root = new Node.And(nodeStack.pop(), new Node.EndNode(id.incrementAndGet()));
 
         if (!nodeStack.isEmpty()) throw new IllegalArgumentException("Bad regular expression");
-
-        return new SyntaxTree(root);
     }
 
-    public static SyntaxTree compile(String regExpr) throws Exception {
-        regExpr = prepareExpr(regExpr);
-
-        System.out.println("regExpr: " + regExpr);
-
-        SyntaxTree tree = buildTree(regExpr);
-
-        return tree;
+    private static String traverseRecursive(Node node) {
+        return switch (node) {
+            case Node.Or(Node left, Node right) -> "(" + traverseRecursive(left) + " or " + traverseRecursive(right) + ")";
+            case Node.And(Node left, Node right) -> "(" + traverseRecursive(left) + " and " + traverseRecursive(right) + ")";
+            case Node.Leaf(char c, int id) -> c + "(" + id + ")";
+            case Node.Snap(Node child) -> "snap(" + traverseRecursive(child) + ")";
+            case Node.Optional(Node child) -> "opt(" + traverseRecursive(child) + ")";
+            case Node.EndNode(int id) -> "(end)";
+        };
+    }
+    
+    public String traverseTree() {
+        if (root == null) return "";
+        return traverseRecursive(root);
     }
 }
