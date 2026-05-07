@@ -7,43 +7,46 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SyntaxTree {
     AtomicInteger id = new AtomicInteger(0);
-    
+    @Getter
+    Map<Integer, Character> charMap = new HashMap<>();
+
     public sealed interface Node {
-        public Node copy(AtomicInteger id);
+        public Node copy(AtomicInteger id, Map<Integer, Character> charMap);
         
         record Leaf(char c, int id) implements Node {
             @Override
-            public Node copy(AtomicInteger id) {
-                return new Leaf(c, id.incrementAndGet());
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+                charMap.put(id.incrementAndGet(), c);
+                return new Leaf(c, id.get());
             }
         }
         record And (Node left, Node right) implements Node {
             @Override
-            public Node copy(AtomicInteger id) {
-                return new And(left.copy(id), right.copy(id));
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+                return new And(left.copy(id, charMap), right.copy(id, charMap));
             }
         }
         record Or (Node left, Node right) implements Node {
             @Override
-            public Node copy(AtomicInteger id) {
-                return new Or(left.copy(id), right.copy(id));
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+                return new Or(left.copy(id, charMap), right.copy(id, charMap));
             }
         } 
         record Snap (Node child) implements Node {
           @Override
-          public Node copy(AtomicInteger id) {
-              return new Snap(child.copy(id));
+          public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+              return new Snap(child.copy(id, charMap));
           }  
         } 
         record Optional (Node child) implements Node {
             @Override
-            public Node copy(AtomicInteger id) {
-                return new Optional(child.copy(id));
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+                return new Optional(child.copy(id, charMap));
             }
         } 
         record EndNode (int id) implements Node {
             @Override
-            public Node copy(AtomicInteger id) {
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
                 return new EndNode(id.incrementAndGet());
             }
         }
@@ -92,7 +95,10 @@ public class SyntaxTree {
         for (int i = 0; i < expr.length(); ++i) {
             char c = expr.charAt(i);
             switch (c) {
-                case '\\' -> nodeStack.push(new Node.Leaf(expr.charAt(++i), id.incrementAndGet()));
+                case '\\' -> {
+                    nodeStack.push(new Node.Leaf(expr.charAt(++i), id.incrementAndGet()));
+                    charMap.put(id.get(), expr.charAt(i));
+                }
                 case '*'  -> nodeStack.push(new Node.Snap(nodeStack.pop()));
                 case '?'  -> nodeStack.push(new Node.Optional(nodeStack.pop()));
                 case '|', '.' -> collapseStack(charactersStack, nodeStack, c);
@@ -120,13 +126,16 @@ public class SyntaxTree {
                     Node current  = original;
 
                     while (--n > 0) {
-                        current = new Node.And(current, original.copy(id));
+                        current = new Node.And(current, original.copy(id, charMap));
                     }
 
                     nodeStack.push(current);
                 }
 
-                default -> nodeStack.push(new Node.Leaf(c, id.incrementAndGet()));
+                default -> {
+                    nodeStack.push(new Node.Leaf(c, id.incrementAndGet()));
+                    charMap.put(id.get(), c);
+                }
             }
         }
 
@@ -135,6 +144,7 @@ public class SyntaxTree {
         }
 
         this.root = new Node.And(nodeStack.pop(), new Node.EndNode(id.incrementAndGet()));
+        charMap.put(id.get(), (char) 0);
 
         if (!nodeStack.isEmpty()) throw new IllegalArgumentException("Bad regular expression");
     }

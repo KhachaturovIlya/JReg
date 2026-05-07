@@ -4,17 +4,22 @@ import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class LabeledSyntaxTree {
-    private SyntaxTree syntaxTree;
-
-    private final HashMap<SyntaxTree.Node, Set<Integer>> firstPos  = new HashMap<>();
-    private final HashMap<SyntaxTree.Node, Set<Integer>> lastPos   = new HashMap<>();
-    private final HashMap<SyntaxTree.Node, Boolean>      nullable  = new HashMap<>();
     @Getter
-    private final HashMap<Integer, Set<Integer>>         followPos = new HashMap<>();
-    
+    private final SyntaxTree syntaxTree;
+
+    private final Map<SyntaxTree.Node, Set<Integer>> firstPos  = new HashMap<>();
+    private final Map<SyntaxTree.Node, Set<Integer>> lastPos   = new HashMap<>();
+    private final Map<SyntaxTree.Node, Boolean>      nullable  = new HashMap<>();
+    private final Map<Integer, Set<Integer>>         followPos = new HashMap<>();
+
+    public Map<Integer, Set<Integer>> getFollowPosTable() {
+        return followPos;
+    }
+
     private void labelNullable(SyntaxTree.Node node) {
         switch (node) {
             case SyntaxTree.Node.And(SyntaxTree.Node left, SyntaxTree.Node right) -> {
@@ -168,7 +173,10 @@ public class LabeledSyntaxTree {
     public Set<Integer> getFollowPos(int id) {
         return followPos.get(id);
     }
-    
+    public Set<Integer> getFirstPos(SyntaxTree.Node node) {
+        return firstPos.get(node);
+    }
+
     LabeledSyntaxTree(SyntaxTree syntaxTree) {
         this.syntaxTree = syntaxTree;
         

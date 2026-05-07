@@ -6,7 +6,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LabeledSyntaxTreeTest {
+public class LabeledSyntaxTreeTests {
 
     private static LabeledSyntaxTree getLabeledTree(String pattern) {
         return new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(pattern)));
