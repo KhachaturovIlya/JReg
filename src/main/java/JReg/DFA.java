@@ -1,15 +1,16 @@
 package JReg;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.*;
 
+@Getter @AllArgsConstructor
 public class DFA {
-    Node startNode;
-    Set<Node> finalNodes = new HashSet<>();
-
-    @Getter
-    List<Node> graph = new ArrayList<>();
+    private List<Node> graph = new ArrayList<>();
+    private Node startNode;
+    private Set<Node> finalNodes = new HashSet<>();
+    private Set<Character> alphabet;
 
     public DFA(LabeledSyntaxTree tree) {
         int nodeID = 0;
@@ -19,7 +20,7 @@ public class DFA {
 
         Map<Integer, Set<Integer>> followPos = tree.getFollowPosTable();
         Map<Integer, Character> symbolMap = tree.getSyntaxTree().getCharMap();
-        Set<Character> alphabet = new HashSet<>(symbolMap.values());
+        alphabet = new HashSet<>(symbolMap.values());
         alphabet.remove((char) 0);
 
         Set<Integer> state = tree.getFirstPos(tree.getSyntaxTree().getRoot());
@@ -56,13 +57,28 @@ public class DFA {
                 if (!newState.isEmpty()) {
                     if (!nodes.containsKey(newState)) {
                         Node newNode = new Node(nodeID++);
-                        nowEdges.add(new Edge(c, newNode));
+                        List<Character> charList = new ArrayList<>();
+                        charList.add(c);
+                        nowEdges.add(new Edge(charList, newNode));
                         nodes.put(newState, newNode);
                         graph.add(newNode);
                         statesQueue.add(newState);
                     } else {
                         Node newNode = nodes.get(newState);
-                        nowEdges.add(new Edge(c, newNode));
+                        boolean found = false;
+
+                        for (Edge edge : nowEdges) {
+                            if (edge.to() == newNode) {
+                                edge.transitionChars().add(c);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            List<Character> charList = new ArrayList<>();
+                            charList.add(c);
+                            nowEdges.add(new Edge(charList, newNode));
+                        }
                     }
                 }
             }
@@ -78,7 +94,7 @@ public class DFA {
             List<Edge> nowEdges = nowNode.getEdges();
             Node nextNode = null;
             for (Edge edge : nowEdges) {
-                if (edge.transitionChar() == c) {
+                if (edge.transitionChars().contains(c)) {
                     nextNode = edge.to();
                     break;
                 }

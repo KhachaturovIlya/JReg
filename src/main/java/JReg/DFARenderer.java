@@ -26,7 +26,7 @@ public class DFARenderer {
         for (Node node : graph.getGraph()) {
             MutableNode source = mutNode(String.valueOf(node.getId()));
 
-            if (graph.finalNodes.contains(node)) {
+            if (graph.getFinalNodes().contains(node)) {
                 source.add(Shape.DOUBLE_CIRCLE);
             } else {
                 source.add(Shape.CIRCLE);
@@ -35,13 +35,21 @@ public class DFARenderer {
             for (Edge edge : node.getEdges()) {
                 MutableNode target = mutNode(String.valueOf(edge.to().getId()));
 
-                if (graph.finalNodes.contains(edge.to())) {
+                if (graph.getFinalNodes().contains(edge.to())) {
                     target.add(Shape.DOUBLE_CIRCLE);
                 } else {
                     target.add(Shape.CIRCLE);
                 }
 
-                source.addLink(to(target).with(Label.of(String.valueOf(edge.transitionChar()))));
+                StringBuilder transChars = new StringBuilder();
+                boolean first = true;
+                for (char c : edge.transitionChars()) {
+                    if (!first) transChars.append(", ");
+                    transChars.append(c);
+                    first = false;
+                }
+
+                source.addLink(to(target).with(Label.of(transChars.toString())));
             }
 
             g.add(source);

@@ -1,3 +1,5 @@
 package JReg;
 
-public record Edge(char transitionChar, Node to) {}
+import java.util.List;
+
+public record Edge(List<Character> transitionChars, Node to) {}
