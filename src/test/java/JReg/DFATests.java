@@ -163,6 +163,7 @@ public class DFATests {
         assertTrue(matches(pattern, "ad"));
         assertTrue(matches(pattern, "abcd"));
         assertFalse(matches(pattern, "abc"));
+        assertFalse(matches(pattern, "abcdefg"));
     }
 
     @Test

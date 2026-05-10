@@ -177,7 +177,11 @@ public class LabeledSyntaxTree {
         return firstPos.get(node);
     }
 
-    LabeledSyntaxTree(SyntaxTree syntaxTree) {
+    public LabeledSyntaxTree(SyntaxTree syntaxTree) {
+        if (syntaxTree.isNamed()) {
+            throw new IllegalArgumentException("Syntax tree is named, which is not allowed");
+        }
+
         this.syntaxTree = syntaxTree;
         
         labelNullable(syntaxTree.getRoot());

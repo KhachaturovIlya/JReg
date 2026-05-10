@@ -5,18 +5,6 @@ import lombok.Getter;
 import java.util.*;
 
 public class DFA {
-    @Getter
-    static protected class Node {
-        final private int id;
-        final private List<Edge> edges = new ArrayList<>();
-
-        public Node(int id) {
-            this.id = id;
-        }
-    }
-
-    protected record Edge(char transitionChar, Node to) {}
-
     Node startNode;
     Set<Node> finalNodes = new HashSet<>();
 
@@ -44,7 +32,7 @@ public class DFA {
         while (!statesQueue.isEmpty()) {
             state = statesQueue.poll();
             Node nowNode = nodes.get(state);
-            List<Edge> nowEdges = nowNode.edges;
+            List<Edge> nowEdges = nowNode.getEdges();
 
             for (Integer id : state) {
                 if (symbolMap.get(id) == (char) 0) {
@@ -87,11 +75,11 @@ public class DFA {
         for (int i = 0; i < word.length(); i++) {
             char c = word.charAt(i);
 
-            List<Edge> nowEdges = nowNode.edges;
+            List<Edge> nowEdges = nowNode.getEdges();
             Node nextNode = null;
             for (Edge edge : nowEdges) {
-                if (edge.transitionChar == c) {
-                    nextNode = edge.to;
+                if (edge.transitionChar() == c) {
+                    nextNode = edge.to();
                     break;
                 }
             }

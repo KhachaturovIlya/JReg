@@ -6,9 +6,11 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SyntaxTree {
-    AtomicInteger id = new AtomicInteger(0);
+    private AtomicInteger id = new AtomicInteger(0);
     @Getter
-    Map<Integer, Character> charMap = new HashMap<>();
+    private Map<Integer, Character> charMap = new HashMap<>();
+    @Getter
+    private boolean named = false;
 
     public sealed interface Node {
         public Node copy(AtomicInteger id, Map<Integer, Character> charMap);
@@ -50,6 +52,12 @@ public class SyntaxTree {
                 return new EndNode(id.incrementAndGet());
             }
         }
+        /*record StartGroup (Node child, String name, int id) implements Node {
+            @Override
+            public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
+                return new StartGroup(child.copy(id, charMap), name, id.incrementAndGet());
+            }
+        }*/
     }
 
     @Getter
@@ -115,6 +123,10 @@ public class SyntaxTree {
                     StringBuilder cnt = new StringBuilder();
                     i++;
 
+                    if (expr.charAt(i) == '<') {
+                        named = true;
+                    }
+
                     while (expr.charAt(i) != '}') {
                         cnt.append(expr.charAt(i++));
                     }
@@ -143,8 +155,10 @@ public class SyntaxTree {
             applyOp(nodeStack, charactersStack.pop());
         }
 
-        this.root = new Node.And(nodeStack.pop(), new Node.EndNode(id.incrementAndGet()));
-        charMap.put(id.get(), (char) 0);
+        if (!named) {
+            this.root = new Node.And(nodeStack.pop(), new Node.EndNode(id.incrementAndGet()));
+            charMap.put(id.get(), (char) 0);
+        }
 
         if (!nodeStack.isEmpty()) throw new IllegalArgumentException("Bad regular expression");
     }

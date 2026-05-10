@@ -6,7 +6,7 @@ public class PreparedRegularStatement {
     @Getter
     String regularStatement;
 
-    PreparedRegularStatement(String regularStatement) {
+    public PreparedRegularStatement(String regularStatement) {
         StringBuilder correctExpr = new StringBuilder();
 
         int openedParenthesis = 0;
