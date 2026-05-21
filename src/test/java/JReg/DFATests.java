@@ -1,5 +1,9 @@
 package JReg;
 
+import JReg.AST.LabeledSyntaxTree;
+import JReg.AST.PreparedRegularStatement;
+import JReg.AST.SyntaxTree;
+import JReg.DFA.DFA;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

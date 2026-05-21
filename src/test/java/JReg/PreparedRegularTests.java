@@ -2,7 +2,7 @@ package JReg;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
-import JReg.PreparedRegularStatement;
+import JReg.AST.PreparedRegularStatement;
 
 public class PreparedRegularTests {
     @Test

@@ -1,4 +1,4 @@
-package JReg;
+package JReg.AST;
 
 import lombok.Getter;
 

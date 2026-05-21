@@ -1,5 +1,7 @@
 package JReg;
 
+import JReg.AST.PreparedRegularStatement;
+import JReg.AST.SyntaxTree;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

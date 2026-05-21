@@ -1,4 +1,4 @@
-package JReg;
+package JReg.DFA;
 
 import lombok.Getter;
 

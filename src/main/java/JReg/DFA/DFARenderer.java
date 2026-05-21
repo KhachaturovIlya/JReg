@@ -1,4 +1,4 @@
-package JReg;
+package JReg.DFA;
 
 import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.attribute.Shape;
@@ -20,7 +20,7 @@ public class DFARenderer {
     File targetFile;
 
     public void renderDFA(DFA graph) throws IOException {
-        MutableGraph g = mutGraph("NFA").setDirected(true);
+        MutableGraph g = mutGraph("JReg/NFA").setDirected(true);
         g.graphAttrs().add("rankdir", "LR");
 
         for (Node node : graph.getGraph()) {

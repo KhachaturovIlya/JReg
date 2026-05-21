@@ -1,4 +1,4 @@
-package JReg;
+package JReg.AST;
 
 import lombok.Getter;
 
@@ -6,11 +6,10 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class SyntaxTree {
-    private AtomicInteger id = new AtomicInteger(0);
     @Getter
-    private Map<Integer, Character> charMap = new HashMap<>();
+    final private Map<Integer, Character> charMap = new HashMap<>();
     @Getter
-    private boolean named = false;
+    private boolean named = false; // WARNING!!! NEED SET TO FALSE!!!
 
     public sealed interface Node {
         public Node copy(AtomicInteger id, Map<Integer, Character> charMap);
@@ -52,12 +51,12 @@ public class SyntaxTree {
                 return new EndNode(id.incrementAndGet());
             }
         }
-        /*record StartGroup (Node child, String name, int id) implements Node {
+        record NamedGroup (Node child, String name) implements Node {
             @Override
             public Node copy(AtomicInteger id, Map<Integer, Character> charMap) {
-                return new StartGroup(child.copy(id, charMap), name, id.incrementAndGet());
+                return new NamedGroup(child.copy(id, charMap), name);
             }
-        }*/
+        }
     }
 
     @Getter
@@ -99,7 +98,9 @@ public class SyntaxTree {
 
         Deque<Node> nodeStack = new ArrayDeque<>();
         Deque<Character> charactersStack = new ArrayDeque<>();
+        Stack<String> namedGroups = new Stack<>();
 
+        AtomicInteger id = new AtomicInteger(0);
         for (int i = 0; i < expr.length(); ++i) {
             char c = expr.charAt(i);
             switch (c) {
@@ -110,22 +111,41 @@ public class SyntaxTree {
                 case '*'  -> nodeStack.push(new Node.Snap(nodeStack.pop()));
                 case '?'  -> nodeStack.push(new Node.Optional(nodeStack.pop()));
                 case '|', '.' -> collapseStack(charactersStack, nodeStack, c);
-                case '(' -> charactersStack.push('(');
+                case '(' -> {
+                    if (expr.charAt(i+1) == '<') {
+                        i += 2;
+                        StringBuilder name = new StringBuilder();
+                        named = true;
+                        char nameC = expr.charAt(i);
+                        while (nameC != '>') {
+                            name.append(c);
+                            nameC = expr.charAt(++i);
+                        }
+
+                        namedGroups.push(name.toString());
+                        charactersStack.push((char) 0);
+                    }
+                    charactersStack.push('(');
+                }
                 case ')' -> {
                     char op = charactersStack.pop();
                     while (op != '(') {
                         applyOp(nodeStack, op);
                         op = charactersStack.pop();
                     }
+                    if (!charactersStack.isEmpty()) {
+                        op = charactersStack.pop();
+                        if (op != (char) 0) charactersStack.push(op);
+                        else {
+                            String name = namedGroups.pop();
+                            nodeStack.push(new Node.NamedGroup(nodeStack.pop(), name));
+                        }
+                    }
                 }
 
                 case '{' -> {
                     StringBuilder cnt = new StringBuilder();
                     i++;
-
-                    if (expr.charAt(i) == '<') {
-                        named = true;
-                    }
 
                     while (expr.charAt(i) != '}') {
                         cnt.append(expr.charAt(i++));
@@ -158,6 +178,8 @@ public class SyntaxTree {
         if (!named) {
             this.root = new Node.And(nodeStack.pop(), new Node.EndNode(id.incrementAndGet()));
             charMap.put(id.get(), (char) 0);
+        } else {
+            this.root = new Node.NamedGroup(nodeStack.pop(), "0");
         }
 
         if (!nodeStack.isEmpty()) throw new IllegalArgumentException("Bad regular expression");
@@ -170,6 +192,7 @@ public class SyntaxTree {
             case Node.Leaf(char c, int id) -> c + "(" + id + ")";
             case Node.Snap(Node child) -> "snap(" + traverseRecursive(child) + ")";
             case Node.Optional(Node child) -> "opt(" + traverseRecursive(child) + ")";
+            case Node.NamedGroup(Node child, String name) -> "group<" + name + ">(" + traverseRecursive(child) + ")";
             case Node.EndNode(int id) -> "(end)";
         };
     }

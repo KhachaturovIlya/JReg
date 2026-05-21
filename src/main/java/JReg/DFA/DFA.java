@@ -1,20 +1,37 @@
-package JReg;
+package JReg.DFA;
 
+import JReg.AST.LabeledSyntaxTree;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
-@Getter @AllArgsConstructor
+@Getter @AllArgsConstructor @RequiredArgsConstructor
 public class DFA {
     private List<Node> graph = new ArrayList<>();
     private Node startNode;
     private Set<Node> finalNodes = new HashSet<>();
     private Set<Character> alphabet;
+    private Map<Node, Set<Integer>> identity = new HashMap<>();
+    private int nodeID = 0;
+
+    public Node addNode() {
+        Node node = new Node(nodeID++);
+        graph.add(node);
+        return node;
+    }
+
+    public DFA(DFA dfa) {
+        this.graph = dfa.graph;
+        this.startNode  = dfa.startNode;
+        this.alphabet   = dfa.alphabet;
+        this.identity   = dfa.identity;
+        this.finalNodes = new HashSet<>(dfa.finalNodes);
+        this.nodeID = dfa.nodeID;
+    }
 
     public DFA(LabeledSyntaxTree tree) {
-        int nodeID = 0;
-
         HashMap<Set<Integer>, Node> nodes = new HashMap<>();
         Queue<Set<Integer>> statesQueue = new ArrayDeque<>();
 
@@ -27,6 +44,7 @@ public class DFA {
 
         statesQueue.add(state);
         startNode = new Node(nodeID++);
+        identity.put(startNode, state);
         nodes.put(state, startNode);
         graph.add(startNode);
 
@@ -61,6 +79,7 @@ public class DFA {
                         charList.add(c);
                         nowEdges.add(new Edge(charList, newNode));
                         nodes.put(newState, newNode);
+                        identity.put(newNode, newState);
                         graph.add(newNode);
                         statesQueue.add(newState);
                     } else {
@@ -106,5 +125,17 @@ public class DFA {
         }
 
         return finalNodes.contains(nowNode);
+    }
+
+    public String search(String word) {
+        for (int i = 0; i < word.length(); i++) {
+            for (int j = i + 1; j < word.length(); j++) {
+                if (match(word.substring(i, j))) {
+                    return word.substring(i, j);
+                }
+            }
+        }
+
+        return null;
     }
 }

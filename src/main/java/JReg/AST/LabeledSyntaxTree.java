@@ -1,4 +1,4 @@
-package JReg;
+package JReg.AST;
 
 import lombok.Getter;
 
@@ -42,6 +42,10 @@ public class LabeledSyntaxTree {
                 nullable.put(node, true);
             }
             case SyntaxTree.Node.EndNode(int id) -> nullable.put(node, false);
+            case SyntaxTree.Node.NamedGroup(SyntaxTree.Node child, String name) -> {
+                labelNullable(child);
+                nullable.put(node, nullable.get(child));
+            }
         }
     }
     
@@ -89,6 +93,10 @@ public class LabeledSyntaxTree {
                 newFirstPos.add(id);
 
                 firstPos.put(node, newFirstPos);
+            }
+            case SyntaxTree.Node.NamedGroup(SyntaxTree.Node child, String name) -> {
+                labelFirstPos(child);
+                firstPos.put(node, new HashSet<>(firstPos.get(child)));
             }
         }
     }
@@ -138,6 +146,10 @@ public class LabeledSyntaxTree {
 
                 lastPos.put(node, newLastPos);
             }
+            case SyntaxTree.Node.NamedGroup(SyntaxTree.Node child, String name) -> {
+                labelLastPos(child);
+                lastPos.put(node, new HashSet<>(lastPos.get(child)));
+            }
         }
     }
     
@@ -167,6 +179,9 @@ public class LabeledSyntaxTree {
                 }
             }
             case SyntaxTree.Node.EndNode(int id) -> {}
+            case SyntaxTree.Node.NamedGroup(SyntaxTree.Node child, String name) -> {
+                labelFollowPos(child);
+            }
         }
     }
 
