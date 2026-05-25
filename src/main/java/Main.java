@@ -13,7 +13,7 @@ public class Main {
 
         File outNFAfile = new File("files/NFA.png");
 
-        DFAMinimizer dfaMinimizer = new DFAMinimizer();
+        // DFAMinimizer dfaMinimizer = new DFAMinimizer();
         String reg = "x(<first>a|b)y";
 
         // DFA dfa = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(reg))));

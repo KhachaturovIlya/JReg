@@ -3,17 +3,17 @@ package JReg.DFA;
 import JReg.AST.LabeledSyntaxTree;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 
-@Getter @AllArgsConstructor @RequiredArgsConstructor
+@Getter @AllArgsConstructor @NoArgsConstructor
 public class DFA {
     private List<Node> graph = new ArrayList<>();
-    private Node startNode;
+    private Node startNode = null;
     private Set<Node> finalNodes = new HashSet<>();
-    private Set<Character> alphabet;
-    private Map<Node, Set<Integer>> identity = new HashMap<>();
+    private Set<Character> alphabet = new HashSet<>();
     private int nodeID = 0;
 
     public Node addNode() {
@@ -26,7 +26,6 @@ public class DFA {
         this.graph = dfa.graph;
         this.startNode  = dfa.startNode;
         this.alphabet   = dfa.alphabet;
-        this.identity   = dfa.identity;
         this.finalNodes = new HashSet<>(dfa.finalNodes);
         this.nodeID = dfa.nodeID;
     }
@@ -44,7 +43,6 @@ public class DFA {
 
         statesQueue.add(state);
         startNode = new Node(nodeID++);
-        identity.put(startNode, state);
         nodes.put(state, startNode);
         graph.add(startNode);
 
@@ -79,7 +77,6 @@ public class DFA {
                         charList.add(c);
                         nowEdges.add(new Edge(charList, newNode));
                         nodes.put(newState, newNode);
-                        identity.put(newNode, newState);
                         graph.add(newNode);
                         statesQueue.add(newState);
                     } else {

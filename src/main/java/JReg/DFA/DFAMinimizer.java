@@ -3,7 +3,7 @@ package JReg.DFA;
 import java.util.*;
 
 public class DFAMinimizer {
-    public DFA minimizeDFA(DFA dfa) {
+    /* public DFA minimizeDFA(DFA dfa) {
         Set<Node> finalStates    = new HashSet<>();
         Set<Node> notFinalStates = new HashSet<>();
         Set<Character> alphabet  = dfa.getAlphabet();
@@ -134,7 +134,7 @@ public class DFAMinimizer {
         }
 
         return new DFA(newGraph, newStart, newFinalNodes, alphabet);
-    }
+    } */
 
     private Set<Node> findPartitionForNode(Node target, List<Set<Node>> partitions) {
         for (Set<Node> partition : partitions) {
