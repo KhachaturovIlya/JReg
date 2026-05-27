@@ -19,7 +19,7 @@ public class Main {
         // File outNFAfile = new File("files/NFA.png");
 
 
-        // DFAMinimizer dfaMinimizer = new DFAMinimizer();
+        DFAMinimizer dfaMinimizer = new DFAMinimizer();
         String reg1 = "a(bc...|d)...e";
         // String reg2 = "abcdef";
 
@@ -32,7 +32,10 @@ public class Main {
         DFARenderer renderer = new DFARenderer(outFile);
         renderer.renderDFA(dfa1);
 
-        DFA dfa2 = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(RestoreReg.restore(dfa1)))));
+        DFA dfa2 = dfaMinimizer.minimize(new DFA(
+                new LabeledSyntaxTree(
+                        new SyntaxTree(
+                                new PreparedRegularStatement(RestoreReg.restore(dfa1))))));
 
         DFARenderer rendererRestored = new DFARenderer(outFileRestored);
         rendererRestored.renderDFA(dfa2);
