@@ -7,28 +7,38 @@ import JReg.DFA.DFAMinimizer;
 import JReg.DFA.DFARenderer;
 import JReg.NFA.NFA;
 import JReg.NFA.NFARenderer;
+import JReg.Restore.RestoreReg;
 
 import java.io.File;
 
 public class Main {
     public void main() throws Exception {
         File outFile = new File("files/DFA.png");
-        File minOutFile = new File("files/minDFA.png");
+        File outFileRestored = new File("files/restoredDFA.png");
+        // File minOutFile = new File("files/minDFA.png");
+        // File outNFAfile = new File("files/NFA.png");
 
-        File outNFAfile = new File("files/NFA.png");
 
         // DFAMinimizer dfaMinimizer = new DFAMinimizer();
-        String reg1 = "(a|b)...";
-        String reg2 = "(ab)...";
+        String reg1 = "a(bc...|d)...e";
+        // String reg2 = "abcdef";
 
         DFA dfa1 = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(reg1))));
-        DFA dfa2 = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(reg2))));
 
-        DFA subDfa = DFACalc.subtraction(dfa1, dfa2);
+        // DFA subDfa = DFACalc.subtraction(dfa1, dfa2);
+
+        // System.out.println(DFACalc.isEqual(DFACalc.addition(DFACalc.addition(dfa1)), dfa2));
 
         DFARenderer renderer = new DFARenderer(outFile);
-        renderer.renderDFA(subDfa);
-        System.out.println(DFACalc.isEqual(DFACalc.addition(DFACalc.addition(dfa1)), dfa2));
+        renderer.renderDFA(dfa1);
+
+        DFA dfa2 = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(RestoreReg.restore(dfa1)))));
+
+        DFARenderer rendererRestored = new DFARenderer(outFileRestored);
+        rendererRestored.renderDFA(dfa2);
+
+
+        // System.out.println(RestoreReg.restore(dfa1));
 
         /*
         dfa = dfaMinimizer.minimizeDFA(dfa);
