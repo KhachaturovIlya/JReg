@@ -135,6 +135,56 @@ public class NFA {
         }
     }
 
+    private static Set<NfaNode> buildEpsilonClosure(Set<NfaNode> currentStates) {
+        Set<NfaNode> epsilonClosure = new HashSet<>(currentStates);
+        Queue<NfaNode> nodeQueue    = new ArrayDeque<>(currentStates);
+
+        while (!nodeQueue.isEmpty()) {
+            NfaNode node = nodeQueue.poll();
+
+            for (NfaNode epsilonNode : node.epsTransitions) {
+                if (!epsilonClosure.contains(epsilonNode)) {
+                    epsilonClosure.add(epsilonNode);
+                    nodeQueue.add(epsilonNode);
+                }
+            }
+        }
+
+        return epsilonClosure;
+    }
+
+    public boolean match(String str) {
+        Set<NfaNode> currentStates = new HashSet<>();
+        currentStates.add(start);
+
+        currentStates = buildEpsilonClosure(currentStates);
+
+        for (char c : str.toCharArray()) {
+            Set<NfaNode> newState = new HashSet<>();
+
+
+            for (NfaNode node : currentStates) {
+                for (char keyC : node.transitions.keySet()) {
+                    if (keyC == c) {
+                        newState.add(node.transitions.get(keyC));
+                    }
+                }
+            }
+
+            if (newState.isEmpty()) { return false; }
+
+            newState = buildEpsilonClosure(newState);
+
+            currentStates = newState;
+        }
+
+        for (NfaNode node : currentStates) {
+            if (node == end) return true;
+        }
+
+        return false;
+    }
+
     public NFA(SyntaxTree tree) {
         if (tree == null) return;
 

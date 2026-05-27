@@ -13,21 +13,20 @@ import java.io.File;
 
 public class Main {
     public void main() throws Exception {
-        File outFile = new File("files/DFA.png");
-        File outFileRestored = new File("files/restoredDFA.png");
+        // File outFile = new File("files/DFA.png");
+        // File outFileRestored = new File("files/restoredDFA.png");
         // File minOutFile = new File("files/minDFA.png");
-        // File outNFAfile = new File("files/NFA.png");
+        File outNFAfile = new File("files/NFA.png");
 
-
-        DFAMinimizer dfaMinimizer = new DFAMinimizer();
+        /* DFAMinimizer dfaMinimizer = new DFAMinimizer();
         String reg1 = "a(bc...|d)...e";
-        // String reg2 = "abcdef";
+        String reg2 = "abcdef";
 
         DFA dfa1 = new DFA(new LabeledSyntaxTree(new SyntaxTree(new PreparedRegularStatement(reg1))));
 
-        // DFA subDfa = DFACalc.subtraction(dfa1, dfa2);
+        DFA subDfa = DFACalc.subtraction(dfa1, dfa2);
 
-        // System.out.println(DFACalc.isEqual(DFACalc.addition(DFACalc.addition(dfa1)), dfa2));
+        System.out.println(DFACalc.isEqual(DFACalc.addition(DFACalc.addition(dfa1)), dfa2));
 
         DFARenderer renderer = new DFARenderer(outFile);
         renderer.renderDFA(dfa1);
@@ -41,16 +40,19 @@ public class Main {
         rendererRestored.renderDFA(dfa2);
 
 
-        // System.out.println(RestoreReg.restore(dfa1));
+        System.out.println(RestoreReg.restore(dfa1));
 
-        /*
         dfa = dfaMinimizer.minimizeDFA(dfa);
         renderer = new DFARenderer(minOutFile);
         renderer.renderDFA(dfa); */
 
-        // NFA nfa = new NFA(new SyntaxTree(new PreparedRegularStatement(reg)));
+        String reg = "(<data>(1|2|3|4|5|6|7|8|9|0){2}\\.(1|2|3|4|5|6|7|8|9|0){2})";
 
-        // NFARenderer renderer = new NFARenderer(outNFAfile);
-        // renderer.renderNFA(nfa);
+        NFA nfa = new NFA(new SyntaxTree(new PreparedRegularStatement(reg)));
+
+        System.out.println(nfa.match("12.05"));
+
+        NFARenderer renderer = new NFARenderer(outNFAfile);
+        renderer.renderNFA(nfa);
     }
 }
